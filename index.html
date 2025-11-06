@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AVL Tree Visualizer by Samridha Banerjee</title>
+
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+
+    <style>
+        /* Basic styling remains the same */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #e0f2f7;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 20px;
+            width: 100%;
+            max-width: 1200px;
+        }
+
+        .controls, .visualizer, .output-log, .traversal-results {
+            background-color: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+
+        .controls {
+            flex: 1;
+            min-width: 300px;
+            max-width: 400px;
+        }
+
+        .visualizer {
+            flex: 2;
+            min-width: 450px;
+            max-width: 700px;
+            height: 400px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: center;
+            border: 2px dashed #a7d9ed;
+            overflow: auto; 
+            position: relative;
+            padding: 20px;
+        }
+        
+        #d3-visualization {
+            width: 100%;
+            height: 100%;
+            overflow: auto; 
+        }
+
+        #tree-canvas pre {
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            text-align: left;
+            margin: 0;
+            padding: 0;
+            white-space: pre; 
+            width: 100%; 
+            box-sizing: border-box;
+        }
+
+        .output-log, .traversal-results {
+            width: 100%;
+            max-width: 1120px;
+        }
+
+        h2 {
+            color: #34495e;
+            margin-top: 0;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .input-group label {
+            min-width: 60px;
+            font-weight: bold;
+            color: #555;
+        }
+
+        .input-group input[type="text"] {
+            flex-grow: 1;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 1em;
+        }
+
+        .btn-group {
+            margin-top: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        button {
+            background-color: #3498db;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background-color 0.2s ease;
+            flex: 1;
+            min-width: 100px;
+        }
+
+        button:hover {
+            background-color: #2980b9;
+        }
+
+        button.clear-btn {
+            background-color: #e74c3c;
+        }
+        button.clear-btn:hover {
+            background-color: #c0392b;
+        }
+        
+        button.traversal-btn {
+             background-color: #2ecc71;
+        }
+        button.traversal-btn:hover {
+             background-color: #27ae60;
+        }
+
+        button.util-btn {
+            background-color: #f39c12;
+        }
+        button.util-btn:hover {
+            background-color: #e67e22;
+        }
+
+        #log {
+            background-color: #ecf0f1;
+            border: 1px solid #ddd;
+            padding: 10px;
+            min-height: 50px;
+            max-height: 150px;
+            overflow-y: auto;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .traversal-output {
+            padding: 5px 0;
+            border-bottom: 1px dotted #ccc;
+        }
+        .traversal-output:last-child {
+            border-bottom: none;
+        }
+        .traversal-output strong {
+            display: inline-block;
+            width: 100px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+                align-items: center;
+            }
+            .controls, .visualizer, .output-log, .traversal-results {
+                width: 95%;
+                max-width: unset;
+            }
+            .visualizer {
+                height: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <h1>AVL Tree Visualizer by Samridha Banerjee 🌲</h1>
+    <p>Enter **numbers, alphabets, or words** to build your **Self-Balancing AVL Tree**. The visualization shows the node's **(height, balance factor)**.</p>
+
+    <div class="container">
+        
+        <div class="controls">
+            <h2>Operations</h2>
+            <div class="input-group">
+                <label for="insertValue">Insert:</label>
+                <input type="text" id="insertValue" placeholder="e.g., Apple, 50, C" style="text-transform: capitalize;">
+                <button onclick="insertNode()">Add</button>
+            </div>
+            <div class="input-group">
+                <label for="searchValue">Search:</label>
+                <input type="text" id="searchValue" placeholder="e.g., Apple, 50, C">
+                <button onclick="searchNode()">Find</button>
+            </div>
+            <div class="input-group">
+                <label for="deleteValue">Delete:</label>
+                <input type="text" id="deleteValue" placeholder="e.g., Apple, 50, C">
+                <button onclick="deleteNode()">Remove</button>
+            </div>
+            <div class="btn-group">
+                <button onclick="clearTree()" class="clear-btn">Clear Tree</button>
+                <button onclick="generateRandomTree()">Random (Numbers)</button>
+            </div>
+        </div>
+
+        
+        <div class="visualizer">
+            <h2>Tree Visualization (Horizontal with L/R Labels)</h2>
+            <div id="d3-visualization">
+                <p style="text-align:center; color:#777;">
+                    **Horizontal Visualization (Root on Left, L/R Branches Labeled):**
+                    <div id="tree-canvas" class="tree-representation"></div>
+                    <br>
+                    *Self-balancing logic actively maintains BF in $\{-1, 0, 1\}$.*
+                </p>
+            </div>
+        </div>
+
+        
+        <div class="traversal-results">
+            <h2>Traversal & Utility</h2>
+            <div class="btn-group">
+                <button onclick="performTraversal('inorder')" class="traversal-btn">Inorder</button>
+                <button onclick="performTraversal('preorder')" class="traversal-btn">Preorder</button>
+                <button onclick="performTraversal('postorder')" class="traversal-btn">Postorder</button>
+                <button onclick="findMinMax('min')" class="util-btn">Find Min</button>
+                <button onclick="findMinMax('max')" class="util-btn">Find Max</button>
+            </div>
+            <div class="traversal-output"><strong>Inorder:</strong> <span id="inorder-output">—</span></div>
+            <div class="traversal-output"><strong>Preorder:</strong> <span id="preorder-output">—</span></div>
+            <div class="traversal-output"><strong>Postorder:</strong> <span id="postorder-output">—</span></div>
+            <div class="traversal-output"><strong>Min Value:</strong> <span id="min-output">—</span></div>
+            <div class="traversal-output"><strong>Max Value:</strong> <span id="max-output">—</span></div>
+        </div>
+
+        
+        <div class="output-log">
+            <h2>Activity Log</h2>
+            <pre id="log">Waiting for your actions...</pre>
+        </div>
+
+    </div>
+
+    <script>
+        // --- 1. AVL Node and Tree Classes (Standard AVL Logic) ---
+
+        class Node {
+            constructor(value) {
+                this.value = value;
+                this.left = null;
+                this.right = null;
+                this.height = 1; 
+            }
+        }
+
+        class AVLTree {
+            constructor() {
+                this.root = null;
+            }
+
+            compare(a, b) {
+                if (a === b) return 0;
+                return a < b ? -1 : 1;
+            }
+
+            getHeight(node) {
+                return node ? node.height : 0;
+            }
+
+            getBalanceFactor(node) {
+                return node ? this.getHeight(node.left) - this.getHeight(node.right) : 0;
+            }
+
+            updateHeight(node) {
+                node.height = Math.max(this.getHeight(node.left), this.getHeight(node.right)) + 1;
+            }
+
+            rotateRight(y) {
+                let x = y.left;
+                let T2 = x.right;
+
+                x.right = y;
+                y.left = T2;
+
+                this.updateHeight(y);
+                this.updateHeight(x);
+                logMessage("Performed **Right Rotation** (AVL Self-Balance).", "system");
+                return x;
+            }
+
+            rotateLeft(x) {
+                let y = x.right;
+                let T2 = y.left;
+
+                y.left = x;
+                x.right = T2;
+
+                this.updateHeight(x);
+                this.updateHeight(y);
+                
+                logMessage("Performed **Left Rotation** (AVL Self-Balance).", "system");
+                return y;
+            }
+
+            insertNode(node, value) {
+                if (node === null) return new Node(value);
+                
+                let comparison = this.compare(value, node.value);
+
+                if (comparison === -1) {
+                    node.left = this.insertNode(node.left, value);
+                } else if (comparison === 1) {
+                    node.right = this.insertNode(node.right, value);
+                } else {
+                    return node; 
+                }
+
+                this.updateHeight(node);
+                let balance = this.getBalanceFactor(node);
+
+                if (balance > 1 && this.compare(value, node.left.value) === -1) return this.rotateRight(node);
+                if (balance < -1 && this.compare(value, node.right.value) === 1) return this.rotateLeft(node);
+
+                if (balance > 1 && this.compare(value, node.left.value) === 1) {
+                    node.left = this.rotateLeft(node.left);
+                    return this.rotateRight(node);
+                }
+
+                if (balance < -1 && this.compare(value, node.right.value) === -1) {
+                    node.right = this.rotateRight(node.right);
+                    return this.rotateLeft(node);
+                }
+
+                return node;
+            }
+
+            insert(value) {
+                this.root = this.insertNode(this.root, value);
+            }
+
+            search(node, value) {
+                if (node === null) return null;
+                let comparison = this.compare(value, node.value);
+                if (comparison === -1) return this.search(node.left, value);
+                if (comparison === 1) return this.search(node.right, value);
+                return node;
+            }
+
+            findMin(node) {
+                if (node === null) return null;
+                while (node.left !== null) node = node.left;
+                return node.value;
+            }
+
+            findMax(node) {
+                if (node === null) return null;
+                while (node.right !== null) node = node.right;
+                return node.value;
+            }
+
+            findMinNode(node) {
+                while (node && node.left !== null) node = node.left;
+                return node;
+            }
+            
+            deleteNode(node, value) {
+                if (node === null) return null;
+
+                let comparison = this.compare(value, node.value);
+
+                if (comparison === -1) {
+                    node.left = this.deleteNode(node.left, value);
+                } else if (comparison === 1) {
+                    node.right = this.deleteNode(node.right, value);
+                } else {
+                    if (node.left === null) return node.right;
+                    if (node.right === null) return node.left;
+                    
+                    let temp = this.findMinNode(node.right);
+                    node.value = temp.value;
+                    node.right = this.deleteNode(node.right, temp.value);
+                }
+
+                if (node === null) return node;
+
+                this.updateHeight(node);
+                let balance = this.getBalanceFactor(node);
+                
+                if (balance > 1) {
+                    if (this.getBalanceFactor(node.left) >= 0) return this.rotateRight(node);
+                    node.left = this.rotateLeft(node.left);
+                    return this.rotateRight(node);
+                }
+
+                if (balance < -1) {
+                    if (this.getBalanceFactor(node.right) <= 0) return this.rotateLeft(node);
+                    node.right = this.rotateRight(node.right);
+                    return this.rotateLeft(node);
+                }
+
+                return node;
+            }
+
+            delete(value) {
+                this.root = this.deleteNode(this.root, value);
+            }
+            
+            inorderTraverse(node, result) {
+                if (node !== null) {
+                    this.inorderTraverse(node.left, result);
+                    result.push(node.value);
+                    this.inorderTraverse(node.right, result);
+                }
+            }
+            preorderTraverse(node, result) {
+                if (node !== null) {
+                    result.push(node.value);
+                    this.preorderTraverse(node.left, result);
+                    this.preorderTraverse(node.right, result);
+                }
+            }
+            postorderTraverse(node, result) {
+                if (node !== null) {
+                    this.postorderTraverse(node.left, result);
+                    this.postorderTraverse(node.right, result);
+                    result.push(node.value);
+                }
+            }
+        }
+
+        // --- 2. Global State and DOM Interaction ---
+
+        let avlTree = new AVLTree(); 
+
+        function processInput(inputValue) {
+            const trimmed = String(inputValue).trim();
+            if (trimmed === '') return null;
+            const num = parseFloat(trimmed);
+            if (!isNaN(num) && String(num) === trimmed) {
+                return num;
+            }
+            return trimmed;
+        }
+
+        function insertNode() {
+            const inputElement = document.getElementById('insertValue');
+            const value = processInput(inputElement.value);
+
+            if (value === null) {
+                logMessage("Input cannot be empty.", "error");
+                return;
+            }
+
+            avlTree.insert(value);
+            logMessage(`Inserted node with value: **${value}** (Checking balance...)`);
+            inputElement.value = '';
+            updateAllOutputs();
+        }
+
+        function searchNode() {
+            const inputElement = document.getElementById('searchValue');
+            const value = processInput(inputElement.value);
+
+            if (value === null) {
+                logMessage("Search input cannot be empty.", "error");
+                return;
+            }
+
+            const foundNode = avlTree.search(avlTree.root, value);
+            if (foundNode) {
+                logMessage(`Search successful: **${value}** was found in the tree.`, "success");
+            } else {
+                logMessage(`Search failed: **${value}** not found in the tree.`, "error");
+            }
+            inputElement.value = '';
+        }
+
+        function deleteNode() {
+            const inputElement = document.getElementById('deleteValue');
+            const value = processInput(inputElement.value);
+
+            if (value === null) {
+                logMessage("Delete input cannot be empty.", "error");
+                return;
+            }
+
+            if (!avlTree.search(avlTree.root, value)) {
+                logMessage(`Deletion failed: **${value}** not found.`, "error");
+                inputElement.value = '';
+                return;
+            }
+            
+            avlTree.delete(value);
+            logMessage(`Deleted node with value: **${value}** (Checking balance...)`);
+            inputElement.value = '';
+            updateAllOutputs();
+        }
+
+        function clearTree() {
+            logMessage("Clearing the entire AVL tree.");
+            avlTree.root = null;
+            updateAllOutputs();
+        }
+
+        function generateRandomTree() {
+            clearTree();
+            const numNodes = Math.floor(Math.random() * 8) + 5;
+            logMessage(`Generating a random **number** AVL tree with **${numNodes}** nodes.`);
+            
+            for (let i = 0; i < numNodes; i++) {
+                const value = Math.floor(Math.random() * 99) + 1;
+                avlTree.insert(value);
+                logMessage(`  Inserted: ${value}`, "system");
+            }
+            updateAllOutputs();
+        }
+
+        function findMinMax(type) {
+            if (avlTree.root === null) {
+                logMessage(`Cannot find ${type} in an empty tree.`, "error");
+                document.getElementById('min-output').textContent = '—';
+                document.getElementById('max-output').textContent = '—';
+                return;
+            }
+
+            let result;
+            if (type === 'min') {
+                result = avlTree.findMin(avlTree.root);
+                document.getElementById('min-output').textContent = result;
+                document.getElementById('max-output').textContent = '—';
+            } else {
+                result = avlTree.findMax(avlTree.root);
+                document.getElementById('max-output').textContent = result;
+                document.getElementById('min-output').textContent = '—';
+            }
+            
+            logMessage(`Find ${type} successful: The value is **${result}**`, "success");
+        }
+
+
+        const traversalFunctions = {
+            inorder: (tree) => {
+                const result = [];
+                tree.inorderTraverse(tree.root, result);
+                return result.join(' | ');
+            },
+            preorder: (tree) => {
+                const result = [];
+                tree.preorderTraverse(tree.root, result);
+                return result.join(' | ');
+            },
+            postorder: (tree) => {
+                const result = [];
+                tree.postorderTraverse(tree.root, result);
+                return result.join(' | ');
+            }
+        };
+
+        function performTraversal(type) {
+            logMessage(`Performing **${type}** traversal.`);
+            if (avlTree.root === null) {
+                logMessage("The tree is empty. Nothing to traverse.", "error");
+                clearTraversalOutputs();
+                return;
+            }
+
+            const result = traversalFunctions[type](avlTree);
+            document.getElementById(`${type}-output`).textContent = result;
+            logMessage(`Traversal result: ${result}`, "system");
+        }
+
+        // --- 3. UI Update Functions ---
+
+        function updateAllOutputs() {
+            updateTextVisualization();
+            clearTraversalOutputs(true);
+        }
+        
+        /**
+         * UPDATED: Simple Horizontal Text Visualization - L/R Labels
+         */
+        function updateTextVisualization() {
+            const treeCanvas = document.getElementById('tree-canvas');
+            if (avlTree.root === null) {
+                treeCanvas.innerHTML = '<p style="font-family:inherit;"><em>Empty.</em></p>';
+                treeCanvas.style.textAlign = 'center';
+            } else {
+                let lines = [];
+                const INDENT_SPACES = 4; 
+                
+                // Helper to add the L/R label for children
+                function formatChildLine(indentLevel, side, nodeInfo) {
+                    let prefix = " ".repeat(indentLevel * INDENT_SPACES);
+                    // Use a simple hyphen followed by the side label (L: or R:)
+                    return prefix + `- ${side}: ${nodeInfo}`;
+                }
+
+                function printNode(node, indentLevel) {
+                    if (node === null) return;
+
+                    let balanceFactor = avlTree.getBalanceFactor(node);
+                    let nodeInfo = `${node.value} (h:${node.height}, b:${balanceFactor})`;
+                    
+                    // Root Node (no prefix or side label)
+                    if (indentLevel === 0) {
+                        lines.push(nodeInfo);
+                    }
+
+                    // 1. Print LEFT child line (L:)
+                    if (node.left) {
+                        let leftInfo = `${node.left.value} (h:${node.left.height}, b:${avlTree.getBalanceFactor(node.left)})`;
+                        lines.push(formatChildLine(indentLevel + 1, 'L', leftInfo));
+                        printNode(node.left, indentLevel + 2); // Deeper indent for subtree
+                    }
+                    
+                    // 2. Print RIGHT child line (R:)
+                    if (node.right) {
+                        let rightInfo = `${node.right.value} (h:${node.right.height}, b:${avlTree.getBalanceFactor(node.right)})`;
+                        lines.push(formatChildLine(indentLevel + 1, 'R', rightInfo));
+                        printNode(node.right, indentLevel + 2); // Deeper indent for subtree
+                    }
+                }
+                
+                lines = [];
+                printNode(avlTree.root, 0); 
+
+                treeCanvas.innerHTML = `<pre style="font-family:Courier New, monospace; padding-left: 0px;">${lines.join('\n')}</pre>`;
+                treeCanvas.style.textAlign = 'left';
+            }
+        }
+        
+        function logMessage(message, type = "info") {
+            const logElement = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            let color = "#333";
+            if (type === "error") color = "#e74c3c";
+            if (type === "success") color = "#27ae60";
+            if (type === "system") color = "#8e44ad";
+            
+            logElement.innerHTML += `<span style="color: ${color};">[${timestamp}] ${message}</span>\n`;
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+
+        function clearTraversalOutputs(clearMinMax = false) {
+            document.getElementById('inorder-output').textContent = '—';
+            document.getElementById('preorder-output').textContent = '—';
+            document.getElementById('postorder-output').textContent = '—';
+            if (clearMinMax) {
+                document.getElementById('min-output').textContent = '—';
+                document.getElementById('max-output').textContent = '—';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            updateAllOutputs();
+            logMessage("Welcome to the AVL Tree Visualizer! The visualization is horizontal with explicit L/R labels for balance.");
+        });
+
+    </script>
+</body>
+</html>
